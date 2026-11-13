@@ -15,6 +15,7 @@ from langgraph.checkpoint.sqlite import SqliteSaver
 
 import xml.etree.ElementTree as ET
 import sqlite3
+import uuid
 
 
 load_dotenv()
@@ -442,9 +443,9 @@ react_graph = graph_builder.compile(checkpointer=memory)
 # Render the graph
 # print(react_graph.get_graph(xray=True).draw_mermaid())
 
-
+"""
 messages = [
-    HumanMessage(content="What does that 6.45%drop mean? be short")
+    HumanMessage(content="Give me current market data for Bitcoin")
 ]
 
 config = {"configurable": {"thread_id": "btc-test"}}
@@ -454,8 +455,62 @@ out = react_graph.invoke(
     config=config
 )
 
+
 for m in out["messages"]:
     try:
         m.pretty_print()
     except Exception:
         print(m)
+"""
+
+print("Crypto Analysis Agent")
+print("Ask me anything about cryptocurrencies.")
+print("Type 'exit' or 'quit' to leave.\n")
+
+try:
+    config = {
+        "configurable": {
+            "thread_id": str(uuid.uuid4())
+        }
+    }
+
+    while True:
+        try:
+            user_input = input("You: ").strip()
+        except EOFError:
+            print("\nBye!")
+            break
+
+        if not user_input:
+            continue
+
+        if user_input.lower() in {"exit", "quit"}:
+            print("Bye!")
+            break
+
+        messages = [HumanMessage(content=user_input)]
+
+        try:
+            result = react_graph.invoke(
+                {"messages": messages},
+                config
+            )
+
+            last_ai = next(
+                (
+                    m for m in reversed(result["messages"])
+                    if m.type == "ai" and not getattr(m, "tool_calls", [])
+                ),
+                None
+            )
+
+            print(f"Agent: {last_ai.content}\n" if last_ai else "Agent: [No reply]\n")
+
+        except Exception:
+            print("Agent: Something went wrong. Please try again.\n")
+
+except KeyboardInterrupt:
+    print("\nBye!")
+
+finally:
+    conn.close()
