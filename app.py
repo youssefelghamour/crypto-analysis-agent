@@ -7,8 +7,14 @@ from typing import Optional
 
 from langchain_core.tools import tool
 from langchain_groq import ChatGroq
+from langchain_core.messages import SystemMessage, HumanMessage
+from langgraph.graph import StateGraph, MessagesState, START, END
+from langgraph.prebuilt import ToolNode, tools_condition
+from langgraph.checkpoint.memory import MemorySaver
+from langgraph.checkpoint.sqlite import SqliteSaver
 
 import xml.etree.ElementTree as ET
+import sqlite3
 
 
 load_dotenv()
@@ -26,7 +32,7 @@ llm = ChatGroq(
 
 
 @tool
-def crypto_list_tool(limit: int = 25) -> str:
+def crypto_list_tool(limit: int = 10) -> str:
     """
     Fetches the available cruptocurrencies from CoinGecko API
     
@@ -68,6 +74,69 @@ def crypto_list_tool(limit: int = 25) -> str:
     }, indent=2)
 
 # print(crypto_list_tool.invoke({"limit": 5}))
+
+
+@tool
+def crypto_search_tool(query: str) -> str:
+    """
+    Searches the cruptocurrency list by name, symbol or id
+    Use this tool to find the coin id before requesting market data instead of
+    retrieving the whole cryptocurrency list to reduce the context
+    
+    Args: 
+        query (str): search query
+        
+    Returns:
+        str: JSON string with a list of coins: [{"id": "...", "symbol": "...", "name": "..."}, ...]
+    """
+    try:
+        response = requests.get(
+            "https://api.coingecko.com/api/v3/search",
+            params={"query": query},
+            timeout=30
+        )
+        response.raise_for_status()
+        data = response.json()
+
+        # result include other lists than coins, keep only coin with only id, sym & name
+        coins = [
+            {
+                "id": coin["id"],
+                "symbol": coin["symbol"],
+                "name": coin["name"]
+            }
+            for coin in data.get("coins", [])[:10]
+        ]
+
+        if not coins:
+            return json.dumps({
+                "status": False,
+                "error": f"No cryptocurrencies found for: {query}"
+            }, indent=2)
+
+        return json.dumps({
+            "status": True,
+            "query": query,
+            "coins": coins
+        }, indent=2)
+
+    except requests.exceptions.HTTPError as e:
+        return json.dumps({
+            "status": False,
+            "error": f"CoinGecko API error: {e}"
+        }, indent=2)
+
+    except requests.exceptions.RequestException as e:
+        return json.dumps({
+            "status": False,
+            "error": f"Request failed: {e}"
+        }, indent=2)
+
+    except ValueError:
+        return json.dumps({
+            "status": False,
+            "error": "Invalid JSON response from CoinGecko"
+        }, indent=2)
 
 
 @tool
@@ -273,3 +342,120 @@ def crypto_news_tool(query: str, max_items: int = 10) -> str:
         }, indent=2)
 
 # print(crypto_news_tool.invoke({"query": 'bitcoin', "max_items": 5}))
+
+
+
+# Register the tools
+tools = [
+    crypto_list_tool,
+    crypto_search_tool,
+    crypto_data_tool,
+    crypto_news_tool
+]
+
+# node responsible for executing tool calls
+tool_node = ToolNode(tools)
+
+# Give the LLM access to the registered tools
+llm_with_tools = llm.bind_tools(tools)
+
+
+SYSTEM_PROMPT = """
+You are a Crypto Market Analyst AI assistant.
+
+Your responsibilities are as follows:
+- Analyze cryptocurrency market data.
+- Retrieve cryptocurrency information and news using available tools.
+- Provide clear, factual and useful market analysis.
+
+Rules:
+1. Use the tools available for retrieving factual cryptocurrency data always.
+2. Never make up prices, market capitalization, trading volume, supply figures, or news.
+3. Use crypto_list_tool when the user wants to discover, browse, or list cryptocurrencies (e.g. random coins).
+4. Use crypto_search_tool when the user asks about a specific cryptocurrency by name, symbol, or CoinGecko ID.
+5. Use crypto_data_tool to retrieve market information using the correct CoinGecko ID.
+6. Use crypto_news_tool to retrieve recent cryptocurrency news.
+7. In case of erros or lack of information from the tools, let the user know.
+8. Distinguish factual data from your own analysis and interpretations.
+9. Indicate the news source/provider when presenting news.
+
+Expected response format:
+
+**Summary**
+Brief overview of the cryptocurrency and its current situation.
+
+**Data**
+Present relevant market metrics, like prices and market capitalization,
+trading volume, supply and chnages withtin 24 hours when available.
+Use the actual field names returned by CoinGecko, such as
+current_price, market_cap and total_volume.
+
+**What it means**
+Explain what the available data and news might indicate.
+Do not present speculation as fact.
+
+**Next steps**
+Give relevant observations or factors worth monitoring.
+"""
+
+
+def assistant(state: MessagesState):
+    """
+    Receives the current conversation and sends it to the LLM
+    """
+    # Include the system message before the conversation messages
+    system_message = SystemMessage(content=SYSTEM_PROMPT)
+
+    # Inboke the LLM with access to the tools
+    response = llm_with_tools.invoke(
+        [system_message] + state['messages']
+    )
+
+    return {"messages": [response]}
+
+
+# Create the graph using MessagesState to manage conversation messages
+graph_builder = StateGraph(MessagesState)
+
+# Register the nodes
+graph_builder.add_node("assistant", assistant)
+graph_builder.add_node("tools", tool_node)
+
+# Connect the nodes
+graph_builder.add_edge(START, "assistant")
+
+# Route to tools if the assistant requests them, otherwise end
+graph_builder.add_conditional_edges("assistant", tools_condition)
+
+# After executing tools, return to the assistant
+graph_builder.add_edge("tools", "assistant")
+
+
+# in memory checkpointer
+# memory = MemorySaver()
+
+conn = sqlite3.connect("checkpoints.sqlite", check_same_thread=False)
+
+memory = SqliteSaver(conn)
+react_graph = graph_builder.compile(checkpointer=memory)
+
+# Render the graph
+# print(react_graph.get_graph(xray=True).draw_mermaid())
+
+
+messages = [
+    HumanMessage(content="What does that 6.45%drop mean? be short")
+]
+
+config = {"configurable": {"thread_id": "btc-test"}}
+
+out = react_graph.invoke(
+    {"messages": messages},
+    config=config
+)
+
+for m in out["messages"]:
+    try:
+        m.pretty_print()
+    except Exception:
+        print(m)
