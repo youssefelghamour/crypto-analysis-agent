@@ -13,7 +13,10 @@ from langgraph.prebuilt import ToolNode, tools_condition
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.checkpoint.sqlite import SqliteSaver
 
+from concurrent.futures import ThreadPoolExecutor
+
 import xml.etree.ElementTree as ET
+from pprint import pprint
 import sqlite3
 import uuid
 
@@ -344,6 +347,129 @@ def crypto_news_tool(query: str, max_items: int = 10) -> str:
 
 # print(crypto_news_tool.invoke({"query": 'bitcoin', "max_items": 5}))
 
+@tool
+def crypto_history_tool(coin_id: str, days: int = 7) -> str:
+    """
+    Fetches historical price and trading volume data for a cryptocurrency.
+
+    Args:
+        coin_id: CoinGecko cryptocurrency ID (e.g. bitcoin).
+        days: Number of days of history (1, 7, 14, or 30).
+
+    Returns:
+        JSON string containing historical prices and volumes.
+    """
+
+    if days not in [1, 7, 14, 30]:
+        return json.dumps({
+            "status": False,
+            "error": "Days must be 1, 7, 14, or 30."
+        })
+
+    try:
+        response = requests.get(
+            f"https://api.coingecko.com/api/v3/coins/{coin_id}/market_chart",
+            params={
+                "vs_currency": "usd",
+                "days": days
+            },
+            timeout=30
+        )
+
+        response.raise_for_status()
+        data = response.json()
+
+    except requests.exceptions.RequestException as e:
+        return json.dumps({
+            "status": False,
+            "error": f"CoinGecko API request failed: {e}"
+        })
+
+    except ValueError:
+        return json.dumps({
+            "status": False,
+            "error": "Invalid JSON response from CoinGecko."
+        })
+
+    prices = [
+        {
+            "timestamp": timestamp,
+            "price": price
+        }
+        for timestamp, price in data.get("prices", [])
+    ]
+
+    volumes = [
+        {
+            "timestamp": timestamp,
+            "volume": volume
+        }
+        for timestamp, volume in data.get("total_volumes", [])
+    ]
+
+    if not prices:
+        return json.dumps({
+            "status": False,
+            "error": f"No historical data found for {coin_id}."
+        })
+
+    price_values = [item["price"] for item in prices]
+
+    first_price = price_values[0]
+    last_price = price_values[-1]
+
+    statistics = {
+        "starting_price": first_price,
+        "latest_price": last_price,
+        "price_change": round(last_price - first_price, 2),
+        "price_change_percentage": round(
+            ((last_price - first_price) / first_price) * 100, 2
+        ),
+        "highest_price": max(price_values),
+        "lowest_price": min(price_values)
+    }
+
+    return json.dumps({
+        "status": True,
+        "coin_id": coin_id,
+        "currency": "USD",
+        "period_days": days,
+        "prices": prices,
+        "volumes": volumes,
+        "statistics": statistics
+    }, indent=2)
+
+# result = crypto_history_tool.invoke({
+#     "coin_id": "bitcoin",
+#     "days": 7
+# })
+
+# print(result)
+
+
+def fetch_market_and_news(coin_id: str):
+    """Fetch market data and news concurrently"""
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        market_future = executor.submit(
+            crypto_data_tool.invoke,
+            {"coin_id": coin_id}
+        )
+
+        news_future = executor.submit(
+            crypto_news_tool.invoke,
+            {"query": coin_id, "max_items": 5}
+        )
+
+        return {
+            "market_data": market_future.result(),
+            "news": news_future.result()
+        }
+
+
+# result = fetch_market_and_news("bitcoin")
+# pprint(result, indent=2, sort_dicts=False)
+
 
 
 # Register the tools
@@ -351,7 +477,8 @@ tools = [
     crypto_list_tool,
     crypto_search_tool,
     crypto_data_tool,
-    crypto_news_tool
+    crypto_news_tool,
+    crypto_history_tool
 ]
 
 # node responsible for executing tool calls
