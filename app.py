@@ -15,8 +15,8 @@ from langgraph.checkpoint.sqlite import SqliteSaver
 
 from concurrent.futures import ThreadPoolExecutor
 
-import xml.etree.ElementTree as ET
 from pprint import pprint
+import xml.etree.ElementTree as ET
 import sqlite3
 import uuid
 
@@ -445,30 +445,6 @@ def crypto_history_tool(coin_id: str, days: int = 7) -> str:
 # })
 
 # print(result)
-
-
-def fetch_market_and_news(coin_id: str):
-    """Fetch market data and news concurrently"""
-
-    with ThreadPoolExecutor(max_workers=2) as executor:
-        market_future = executor.submit(
-            crypto_data_tool.invoke,
-            {"coin_id": coin_id}
-        )
-
-        news_future = executor.submit(
-            crypto_news_tool.invoke,
-            {"query": coin_id, "max_items": 5}
-        )
-
-        return {
-            "market_data": market_future.result(),
-            "news": news_future.result()
-        }
-
-
-# result = fetch_market_and_news("bitcoin")
-# pprint(result, indent=2, sort_dicts=False)
 
 
 
