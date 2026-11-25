@@ -219,6 +219,7 @@ def crypto_history_tool(coin_id: str, days: int = 7) -> str:
         for timestamp, price in data.get("prices", [])
     ]
 
+    # Each entry point is a volume value covering the last 24 hours from the timestamp
     volumes = [
         {
             "timestamp": timestamp,

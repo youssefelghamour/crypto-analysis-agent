@@ -2,8 +2,8 @@
 from typing import TypedDict, Literal, Annotated
 from langchain_core.messages import AnyMessage
 from langgraph.graph.message import add_messages
-from schemas import MarketReport, ResearchData
-
+from schemas.report import MarketReport, MarketMetrics
+from schemas.research import ResearchData
 
 
 class AnalysisState(TypedDict):
@@ -40,7 +40,7 @@ class AnalysisState(TypedDict):
     news_error: str | None
 
     # Calculated market metrics (Python calculations)
-    metrics: dict | None
+    metrics: MarketMetrics | None
 
     # Structured outputs from the analyst
     analysis: dict | None
