@@ -2,6 +2,7 @@
 from typing import TypedDict, Literal, Annotated
 from langchain_core.messages import AnyMessage
 from langgraph.graph.message import add_messages
+from schemas import MarketReport, ResearchData
 
 
 
@@ -24,6 +25,9 @@ class AnalysisState(TypedDict):
     # Conversation history, preserved across turns
     messages: Annotated[list[AnyMessage], add_messages]
 
+    # Output of the research agent
+    research_data: ResearchData | None
+
     # Raw data returned by the research tools
     market_data: dict | None
     historical_data: dict | None
@@ -36,7 +40,7 @@ class AnalysisState(TypedDict):
     news_error: str | None
 
     # Calculated market metrics (Python calculations)
-    metrics: dict
+    metrics: dict | None
 
     # Structured outputs from the analyst
     analysis: dict | None
@@ -45,7 +49,7 @@ class AnalysisState(TypedDict):
     revision_count: int
 
     # Final validated report
-    final_report: dict | None
+    final_report: MarketReport | None
 
     # Current workflow status
     status: Literal[

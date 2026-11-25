@@ -1,4 +1,7 @@
-"""Pydantic models for structured market reports"""
+"""Pydantic models for the final cryptocurrency market report
+Defining the output of the complete report workflow
+The final MarketReport is assembled after research, metrics calculation, analysis & review
+"""
 from datetime import datetime
 from typing import Literal
 from pydantic import BaseModel, Field
@@ -43,6 +46,7 @@ class MarketAnalysis(BaseModel):
 
 
 class MarketReport(BaseModel):
+    """Final validated report delivered to the user and consumed by the frontend"""
     # Currency being analyzed
     coin_id: str
     coin_name: str
