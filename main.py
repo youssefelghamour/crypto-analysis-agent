@@ -1,15 +1,16 @@
+"""CLI entry point for the Crypto Analysis Agent."""
 import uuid
-from langchain_core.messages import HumanMessage
-from agent.graph import build_graph
+from graphs.main_graph import build_main_graph
 
 
 def main():
-    graph, conn = build_graph()
+    graph, conn = build_main_graph()
 
     print("Crypto Analysis Agent")
     print("Ask me anything about cryptocurrencies.")
     print("Type 'exit' or 'quit' to leave.\n")
 
+    # Keep the same thread ID throughout this conversation
     config = {
         "configurable": {
             "thread_id": str(uuid.uuid4()),
@@ -33,30 +34,32 @@ def main():
 
             try:
                 result = graph.invoke(
-                    {"messages": [HumanMessage(content=user_input)]},
-                    config,
+                    {
+                        "request": user_input,
+                        "messages": [
+                            {"role": "user", "content": user_input}
+                        ],
+                    },
+                    config=config,
                 )
 
-                last_ai = next(
-                    (
-                        message
-                        for message in reversed(result["messages"])
-                        if message.type == "ai"
-                        and not getattr(message, "tool_calls", [])
-                    ),
-                    None,
-                )
+                if result["intent"] == "discussion":
+                    response = result.get("discussion_response")
+                    print(f"Agent: {response or '[No reply]'}\n")
 
-                print(
-                    f"Agent: {last_ai.content}\n"
-                    if last_ai
-                    else "Agent: [No reply]\n"
-                )
+                elif result["intent"] == "report":
+                    error = result.get("validation_error")
+                    print(f"Agent: {error or '[Report unavailable]'}\n")
+
             except Exception as e:
-                print(f"Agent: Something went wrong ({e}). Please try again.\n")
+                print(
+                    f"Agent: Something went wrong ({e}). "
+                    "Please try again.\n"
+                )
 
     except KeyboardInterrupt:
         print("\nBye!")
+
     finally:
         conn.close()
 
