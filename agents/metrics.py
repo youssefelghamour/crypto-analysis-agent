@@ -29,8 +29,9 @@ def metrics_node(state: AnalysisState) -> dict:
     market_data = state.get("market_data") or {}
     historical_data = state.get("historical_data") or {}
 
-    # Extract the current market snapshot returned by CoinGecko
-    coin = market_data.get("coin") or {}
+    # market data tool return an object containing status and coin,
+    # but the structurer's LLM flattens it removing status
+    coin = market_data
 
     current_price = to_float(coin.get("current_price"))
     market_cap = to_float(coin.get("market_cap"))

@@ -6,6 +6,8 @@ current market data, historical data, and recent news using the provided tools
 The structuring Agent structures the LLM response from the Research Agent into research_data in the state
 """
 
+import json
+from langchain_core.messages import ToolMessage
 from langgraph.graph import StateGraph, START, END
 from langgraph.prebuilt import ToolNode
 
@@ -19,7 +21,35 @@ from tools import tools
 def build_research_graph():
     """Build the research subgraph using the shared AnalysisState"""
 
-    tool_node = ToolNode(tools)
+    def execute_research_tools(state: AnalysisState) -> dict:
+        """Tool node wrapper that executes research tools and keep large historical
+            results outside message history to avoid exceeding the rate limit
+
+            Saves full historical results in the state while replacing ToolMessage with a short msg
+            The structurer's LLM message won't include the historical_data in this case
+        """
+
+        result = ToolNode(tools).invoke(state)
+
+        messages = result["messages"]
+
+        for message in messages:
+            if message.name == "crypto_history_tool":
+                historical_data = json.loads(message.content)
+
+                return {
+                    "messages": [
+                        ToolMessage(
+                            content="Historical data retrieved successfully.",
+                            tool_call_id=message.tool_call_id,
+                            name=message.name,
+                        )
+                    ],
+                    "historical_data": historical_data,  # Saves it directly to the state, before the structurer
+                }
+
+        return {"messages": messages}
+    
 
     def route_after_agent(state: AnalysisState) -> str:
         """Execute requested tools or proceed to structured output agents"""
@@ -37,13 +67,15 @@ def build_research_graph():
 
         research_data = state["research_data"]
 
+        # "historical_data": research_data.historical_data is removed because the LLM doesn't receive it
+        # Normally we wait for the structurer to fill those fields in the state,
+        # but now our tool node saves this field directly to the state before the structurer
         return {
             "coin_id": research_data.coin_id,
             "coin_name": research_data.coin_name,
             "coin_symbol": research_data.coin_symbol,
             "period_days": research_data.period_days,
             "market_data": research_data.market_data,
-            "historical_data": research_data.historical_data,
             "news_data": research_data.news_data,
             "validation_error": research_data.validation_error,
             "market_error": research_data.market_error,
@@ -55,7 +87,7 @@ def build_research_graph():
     graph_builder = StateGraph(AnalysisState)
 
     graph_builder.add_node("research_agent", research_agent_node)
-    graph_builder.add_node("tools", tool_node)
+    graph_builder.add_node("tools", execute_research_tools)
     graph_builder.add_node("structurer", research_structurer_node)
     graph_builder.add_node("map_research_data", map_research_data)
 

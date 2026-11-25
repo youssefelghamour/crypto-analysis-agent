@@ -10,12 +10,14 @@ from langgraph.graph import StateGraph, START, END
 from agents.planner import planner_node
 from graphs.state import AnalysisState
 from graphs.discussion import build_discussion_graph
+from graphs.report import build_report_graph
 
 
 def build_main_graph():
     """Build the main workflow and configure persistent conversation memory."""
 
     discussion_graph = build_discussion_graph()
+    report_graph = build_report_graph()
 
     def discussion_node(state: AnalysisState) -> dict:
         """Run the discussion subgraph using the stored conversation history."""
@@ -41,16 +43,7 @@ def build_main_graph():
             ),
             "status": "completed",
         }
-
-    def report_placeholder(state: AnalysisState) -> dict:
-        """Handle report requests temporarily until the report workflow is implemented"""
-
-        return {
-            "status": "failed",
-            "validation_error": (
-                "The report workflow has not been implemented yet."
-            ),
-        }
+    
 
     def route_request(state: AnalysisState) -> str:
         """Select the workflow based on the planner's decision"""
@@ -63,7 +56,7 @@ def build_main_graph():
 
     graph_builder.add_node("planner", planner_node)
     graph_builder.add_node("discussion", discussion_node)
-    graph_builder.add_node("report", report_placeholder)
+    graph_builder.add_node("report", report_graph)
 
     graph_builder.add_edge(START, "planner")
 

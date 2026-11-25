@@ -16,7 +16,7 @@ class ResearchData(BaseModel):
 
     # Raw responses from research tools
     market_data: dict | None = None
-    historical_data: dict | None = None
+    # historical_data: dict | None = None
     news_data: list[dict] = Field(default_factory=list)
 
     # Errors encountered during data collection

@@ -39,7 +39,7 @@ def analyst_node(state: dict) -> dict:
             "period_days": state["period_days"],
         },
         "market_data": state["market_data"],
-        "historical_data": state["historical_data"],
+        # "historical_data": state["historical_data"],
         "news_data": state["news_data"],
         "metrics": (
             metrics.model_dump()
