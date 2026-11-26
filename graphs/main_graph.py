@@ -2,6 +2,7 @@
 """Main LangGraph workflow orchestrating discussion and report requests."""
 
 import sqlite3
+import json
 
 from langchain_core.messages import AIMessage
 from langgraph.checkpoint.sqlite import SqliteSaver
@@ -22,8 +23,33 @@ def build_main_graph():
     def discussion_node(state: AnalysisState) -> dict:
         """Run the discussion subgraph using the stored conversation history."""
 
+        conversation_messages = []
+
+        for message in state["messages"]:
+            # Remove/don't include tool messages and assistant tool-call messages
+            if message.type == "tool":
+                continue
+
+            if isinstance(message, AIMessage) and message.tool_calls:
+                continue
+
+            # Remove bulky price and volume history from report messages
+            if isinstance(message.content, str):
+                content = message.content
+                try:
+                    data = json.loads(content)
+                    if isinstance(data, dict):
+                        data.pop("price_history", None)
+                        data.pop("volume_history", None)
+                        content = json.dumps(data)
+                        message = message.model_copy(update={"content": content})
+                except (json.JSONDecodeError, TypeError):
+                    pass
+
+            conversation_messages.append(message)
+
         result = discussion_graph.invoke({
-            "messages": state["messages"]
+            "messages": conversation_messages
         })
 
         # Extract the final assistant response, excluding tool-call messages
