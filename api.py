@@ -239,3 +239,45 @@ async def get_market_history():
             status_code=502,
             detail=f"Unable to retrieve historical market data: {error}",
         )
+
+
+
+global_cache = None
+global_cache_timestamp = 0
+GLOBAL_CACHE_TTL = 300
+
+@app.get("/market/global")
+async def get_global_market_data():
+    """Fetch global indicators like market cap, 24h volume and BTC dominance"""
+    global global_cache, global_cache_timestamp
+
+    now = time.time()
+
+    if global_cache and now - global_cache_timestamp < GLOBAL_CACHE_TTL:
+        return global_cache
+
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.get(
+                "https://api.coingecko.com/api/v3/global"
+            )
+            response.raise_for_status()
+
+        data = response.json()["data"]
+
+        global_cache = {
+            "total_market_cap_usd": data["total_market_cap"]["usd"],
+            "total_volume_24h_usd": data["total_volume"]["usd"],
+            "btc_dominance_pct": data["market_cap_percentage"]["btc"],
+            "updated_at": data["updated_at"],
+        }
+
+        global_cache_timestamp = now
+
+        return global_cache
+
+    except (httpx.HTTPError, KeyError) as error:
+        raise HTTPException(
+            status_code=502,
+            detail="Failed to fetch global market data",
+        ) from error

@@ -1,0 +1,128 @@
+.market-section {
+  width: 100%;
+}
+
+.market-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.market-card {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  width: 100%;
+  padding: 19px;
+  text-align: left;
+  color: inherit;
+  background: #ffffff;
+  border: 1px solid #e5e9ef;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: border-color 160ms ease, box-shadow 160ms ease,
+    transform 160ms ease;
+}
+
+.market-card:hover {
+  border-color: #b9c9c2;
+  box-shadow: 0 4px 14px rgba(28, 45, 38, 0.06);
+  transform: translateY(-2px);
+}
+
+.asset-heading {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-width: 0;
+}
+
+.asset-logo {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.asset-identity {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.asset-identity strong {
+  color: #293547;
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.asset-identity span {
+  color: #8993a2;
+  font-size: 11px;
+}
+
+.asset-change {
+  margin-left: auto;
+  padding: 5px 8px;
+  border-radius: 5px;
+  font-size: 11px;
+  font-weight: 650;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.asset-change.positive {
+  color: #16834a;
+  background: #edf7f1;
+}
+
+.asset-change.negative {
+  color: #d04444;
+  background: #fdf0f0;
+}
+
+.asset-change.neutral {
+  color: #8993a2;
+  background: #f1f3f5;
+}
+
+.asset-details {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.asset-price {
+  color: #202d3d;
+  font-size: 20px;
+  font-weight: 650;
+  letter-spacing: -0.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+.asset-action {
+  color: #82858b;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.market-card:hover .asset-action {
+  font-weight: bold;
+  color: black
+}
+
+.market-status {
+  grid-column: 1 / -1;
+  color: #8993a2;
+  font-size: 12px;
+}
+
+@media (max-width: 650px) {
+  .market-grid {
+    grid-template-columns: 1fr;
+  }
+}
