@@ -5,6 +5,7 @@ import "./App.css";
 import MarketTicker from "./MarketTicker";
 import MarketWatch from "./MarketWatch";
 import MarketPerformance from "./MarketPerformance";
+import MarketReportView from "./MarketReportView";
 
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
@@ -324,7 +325,7 @@ function App() {
                             {normalizeMarkdown(message.content)}
                           </ReactMarkdown>
                         ) : (
-                          <pre>{JSON.stringify(message.content, null, 2)}</pre>
+                          <MarketReportView report={message.content} />
                         )}
                       </div>
                     </div>

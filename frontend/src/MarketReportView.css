@@ -1,0 +1,238 @@
+
+.market-report {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  width: 100%;
+}
+
+/* Header */
+
+.report-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.report-header h2 {
+  margin: 0 0 5px;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.report-header span,
+.report-footer,
+.report-metric span,
+.report-news-meta,
+.report-news-link {
+  color: #778397;
+  font-size: 12px;
+}
+
+.confidence {
+  text-transform: capitalize;
+  padding: 5px 10px;
+  border-radius: 20px;
+  background: #edf2f7;
+  font-size: 12px;
+}
+
+/* Sections */
+
+.report-section h3 {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0 0 12px;
+}
+
+.report-section p,
+.report-section li {
+  font-size: 14px;
+  line-height: 1.65;
+  color: #536174;
+}
+
+.report-section ul {
+  padding-left: 20px;
+  margin: 0;
+}
+
+.report-section li + li {
+  margin-top: 8px;
+}
+
+/* Metrics */
+
+.report-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.report-metric {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 13px;
+  background: #f6f8fa;
+  border-radius: 9px;
+}
+
+.report-metric strong {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+
+/* Charts */
+
+.report-chart {
+  width: 100%;
+  height: 300px;
+  min-width: 0;
+  padding: 16px;
+  box-sizing: border-box;
+  border: 1px solid #e8ebef;
+  border-radius: 10px;
+  background: #fff;
+}
+
+/* Chart axes */
+
+.report-chart .recharts-cartesian-axis-line,
+.report-chart .recharts-cartesian-axis-tick-line {
+  stroke: transparent;
+}
+
+.report-chart .recharts-cartesian-axis-tick-value {
+  fill: #94a0b0;
+  font-family: 'Satoshi', sans-serif;
+  font-size: 11px;
+}
+
+/* Grid */
+
+.report-chart .recharts-cartesian-grid line {
+  stroke: #edf0f3;
+  stroke-dasharray: 3 4;
+}
+
+/* Tooltip */
+
+.report-chart .recharts-tooltip-wrapper {
+  outline: none;
+}
+
+.report-chart .recharts-default-tooltip {
+  padding: 10px 13px !important;
+  border: 1px solid #273449 !important;
+  border-radius: 9px !important;
+  background: #202b3c !important;
+  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.16) !important;
+}
+
+.report-chart .recharts-tooltip-label {
+  margin-bottom: 6px !important;
+  color: #aebaca !important;
+  font-family: 'Satoshi', sans-serif;
+  font-size: 11px !important;
+}
+
+.report-chart .recharts-tooltip-item {
+  color: #fff !important;
+  font-family: 'Satoshi', sans-serif;
+  font-size: 13px !important;
+}
+
+/* Chart lines and areas */
+
+.report-chart .recharts-line-curve {
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.report-chart .recharts-area {
+  stroke-linecap: round;
+}
+
+/* Animation */
+
+.report-chart .recharts-surface {
+  overflow: visible;
+}
+
+
+/* News */
+
+.report-news {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.report-news-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid #e8ebef;
+  border-radius: 10px;
+  background: #fff;
+  color: inherit;
+  text-decoration: none;
+  transition: border-color 0.2s, transform 0.2s;
+}
+
+.report-news-card:hover {
+  border-color: #cbd5e1;
+  transform: translateY(-2px);
+}
+
+.report-news-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.report-news-card h4 {
+  margin: 0;
+  color: #344256;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.report-news-link {
+  margin-top: auto;
+  color: #64748b;
+  font-weight: 600;
+}
+
+/* Footer */
+
+.report-footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px;
+  padding-top: 5px;
+}
+
+/* Responsive */
+
+@media (max-width: 650px) {
+  .report-news {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .report-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .report-header {
+    flex-direction: column;
+  }
+}
