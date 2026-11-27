@@ -18,6 +18,7 @@ class ResearchData(BaseModel):
     market_data: dict | None = None
     # historical_data: dict | None = None
     news_data: list[dict] = Field(default_factory=list)
+    news_provider: str | None = None
 
     # Errors encountered during data collection
     validation_error: str | None = None

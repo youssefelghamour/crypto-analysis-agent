@@ -178,14 +178,6 @@ def report_builder_node(state: AnalysisState) -> dict:
     if state.get("market_data") or historical_data:
         data_sources.append("CoinGecko")
 
-    # News provider metadata may not survive the ResearchData structuring step
-    providers = {
-        article.get("provider")
-        for article in news_data
-        if article.get("provider")
-    }
-    data_sources.extend(sorted(providers))
-
     report = MarketReport(
         coin_id=state["coin_id"],
         coin_name=state["coin_name"],
@@ -196,6 +188,7 @@ def report_builder_node(state: AnalysisState) -> dict:
         price_history=price_history,
         volume_history=volume_history,
         news=news,
+        news_provider=state.get("news_provider"),
         analysis=analysis,
         data_sources=data_sources,
         limitations=limitations,

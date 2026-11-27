@@ -75,5 +75,6 @@ class MarketReport(BaseModel):
 
     # Data transparency
     data_sources: list[str] = Field(default_factory=list)
+    news_provider: str | None = None
     # Tells the user when data is incomplete or unavailable
     limitations: list[str] = Field(default_factory=list)

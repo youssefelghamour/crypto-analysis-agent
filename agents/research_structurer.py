@@ -20,6 +20,8 @@ Rules:
 - Record historical data failures in historical_error.
 - Record news failures in news_error.
 - Leave unavailable data fields empty or None as appropriate.
+- Extract the news provider from the news tool response into news_provider.
+- Preserve only the articles in news_data.
 """
 
 
