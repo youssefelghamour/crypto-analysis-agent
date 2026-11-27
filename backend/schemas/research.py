@@ -1,4 +1,3 @@
-
 """Pydantic models for raw research data, defining the output of the Research Agent"""
 from pydantic import BaseModel, Field
 
